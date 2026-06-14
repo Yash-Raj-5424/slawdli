@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles, avoid purple */
+:root {
+  --text: #374151; /* gray-600 */
+  --text-h: #111827; /* gray-900 */
+  --bg: #ffffff;
+  --border: #d1d5db; /* gray-300 */
+  --accent: #2563eb; /* blue-600 */
+  --accent-bg: rgba(37, 99, 235, 0.1);
+  --accent-border: rgba(37, 99, 235, 0.2);
+}
+
+/* Ensure no purple shades appear */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+#root {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1, h2 {
+  color: var(--text-h);
+}
+
+input[type="file"] {
+  /* Style file input */
+}
+
+button {
+  /* Base button styles */
+}
