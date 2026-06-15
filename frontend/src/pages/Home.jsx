@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import ImageUploader from '../components/ImageUploader';
+import PredictionResult from '../components/PredictionResult';
 
-function App() {
+const Home = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [predictionResult, setPredictionResult] = useState(null);
@@ -52,11 +52,26 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 pb-6">
-      <Navbar />
-      <Outlet />
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 px-6 pt-16 pb-6">
+      <header className="mb-6">
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+          Skin Disease Detection
+        </h1>
+        <p className="text-gray-600">
+          Upload an image to get a prediction
+        </p>
+      </header>
+      <ImageUploader
+        selectedFile={selectedFile}
+        previewUrl={previewUrl}
+        loading={loading}
+        error={error}
+        onFileChange={handleFileChange}
+        onSubmit={handleSubmit}
+      />
+      <PredictionResult predictionResult={predictionResult} />
     </div>
   );
-}
+};
 
-export default App;
+export default Home;

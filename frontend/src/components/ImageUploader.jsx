@@ -19,7 +19,7 @@ const ImageUploader = ({ onFileChange, onSubmit, selectedFile, previewUrl, loadi
             accept="image/*"
             onChange={handleFileChange}
             disabled={loading}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
           />
           {selectedFile && (
             <p className="mt-2 text-sm text-gray-500">
@@ -30,11 +30,11 @@ const ImageUploader = ({ onFileChange, onSubmit, selectedFile, previewUrl, loadi
       </div>
 
       {previewUrl && (
-        <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden border border-gray-200">
+        <div className="aspect-w-16 aspect-h-9 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
           <img
             src={previewUrl}
             alt="Preview"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </div>
       )}
@@ -42,7 +42,7 @@ const ImageUploader = ({ onFileChange, onSubmit, selectedFile, previewUrl, loadi
       <button
         type="submit"
         disabled={loading || !selectedFile}
-        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md disabled:opacity-50 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        className="w-full flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-md disabled:opacity-50 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus-ring-blue-500 focus:ring-offset-2 transition-colors"
       >
         {loading ? (
           <>
@@ -58,7 +58,7 @@ const ImageUploader = ({ onFileChange, onSubmit, selectedFile, previewUrl, loadi
       </button>
 
       {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-md">
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-md shadow-sm">
           <p className="font-medium">Error:</p>
           <p>{error}</p>
         </div>
