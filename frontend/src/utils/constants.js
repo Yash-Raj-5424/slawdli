@@ -9,9 +9,12 @@ export const ACCEPTED_IMAGE_TYPES = [
 ];
 
 export const REPORTS_STORAGE_KEY = 'slawdli_reports';
+export const AUTH_TOKEN_KEY = 'slawdli_token';
 
 export const NAV_LINKS = [
   { to: '/', label: 'Home' },
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/reports', label: 'Reports' },
   { to: '/about', label: 'About' },
+  { to: '/profile', label: 'Profile' },
 ];
