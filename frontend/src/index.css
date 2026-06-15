@@ -49,4 +49,23 @@
     );
     background-size: 200% 100%;
   }
+
+  .landing-hero {
+    background: linear-gradient(
+      160deg,
+      rgb(13 148 136 / 0.06) 0%,
+      rgb(2 132 199 / 0.04) 40%,
+      rgb(248 250 252) 100%
+    );
+  }
+
+  .landing-hero-glow {
+    background:
+      radial-gradient(ellipse 60% 50% at 50% -10%, rgb(13 148 136 / 0.12), transparent),
+      radial-gradient(ellipse 40% 30% at 80% 20%, rgb(2 132 199 / 0.08), transparent);
+  }
+
+  .landing-preview-card {
+    animation: slideUp 0.5s ease-out;
+  }
 }
