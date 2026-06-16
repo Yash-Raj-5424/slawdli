@@ -14,18 +14,17 @@ async def predict_skin_disease(file: UploadFile = File(...)):
     Predict skin disease from uploaded image
     """
     # Validate file type
-    if not file.content_type.startswith('image/'):
+    if not file.content_type or not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
-        # Read file contents
         contents = await file.read()
-
-        # Call prediction service
         result = await prediction_service.predict(contents, file.filename)
-
         return JSONResponse(content=result)
 
+    except RuntimeError as e:
+        logger.error("Model unavailable: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        logger.error(f"Error processing image: {str(e)}")
+        logger.error("Error processing image: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error")

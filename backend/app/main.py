@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.routes import prediction
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.reports import router as reports_router
+from app.core.model_loader import get_model_error, is_model_loaded, load_model
 
 app = FastAPI(
     title="Skin Disease Detection API",
@@ -24,10 +25,20 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(prediction.router, prefix="/api/v1", tags=["prediction"])
 app.include_router(reports_router, prefix="/api/v1", tags=["reports"])
 
+
+@app.on_event("startup")
+async def startup_load_model():
+    load_model()
+
+
 @app.get("/")
 async def root():
     return {"message": "Skin Disease Detection API is running"}
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy" if is_model_loaded() else "degraded",
+        "model_loaded": is_model_loaded(),
+        "model_error": get_model_error(),
+    }

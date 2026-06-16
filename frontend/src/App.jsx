@@ -4,6 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ReportsProvider } from './hooks/useReports';
 import { AuthProvider } from './hooks/useAuth';
 import Home from './pages/Home';
+import Analyze from './pages/Analyze';
 import Reports from './pages/Reports';
 import About from './pages/About';
 import Dashboard from './pages/Dashboard';
@@ -21,7 +22,7 @@ export default function App() {
             <Routes>
               <Route element={<AppShell />}>
                 <Route index element={<Home />} />
-                <Route path="analyze" element={<Home />} />
+                <Route path="analyze" element={<Analyze />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="about" element={<About />} />
                 <Route path="dashboard" element={<Dashboard />} />

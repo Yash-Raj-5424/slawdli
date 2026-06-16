@@ -13,6 +13,7 @@ export const AUTH_TOKEN_KEY = 'slawdli_token';
 
 export const NAV_LINKS = [
   { to: '/', label: 'Home' },
+  { to: '/analyze', label: 'Analyze' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/reports', label: 'Reports' },
   { to: '/about', label: 'About' },
