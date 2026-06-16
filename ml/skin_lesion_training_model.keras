@@ -1,0 +1,417 @@
+# ============================================
+# INSTALL REQUIRED PACKAGES
+# ============================================
+
+!pip install tensorflow pandas numpy matplotlib seaborn scikit-learn kaggle -q
+
+# ============================================
+# IMPORT LIBRARIES
+# ============================================
+
+import os
+import glob
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras.applications import EfficientNetB3
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+
+from sklearn.model_selection import train_test_split
+from sklearn.utils.class_weight import compute_class_weight
+from sklearn.metrics import classification_report, confusion_matrix
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+print("TensorFlow Version:", tf.__version__)
+
+# ============================================
+# KAGGLE API SETUP
+# ============================================
+
+os.environ['KAGGLE_USERNAME'] = 'YOUR_KAGGLE_USERNAME'
+os.environ['KAGGLE_KEY'] = 'KGAT_b7452f45ff37badde69d87dad6d249e8'
+
+# ============================================
+# DOWNLOAD HAM10000 DATASET
+# ============================================
+
+!kaggle datasets download -d kmader/skin-cancer-mnist-ham10000
+
+# ============================================
+# UNZIP DATASET
+# ============================================
+
+if not os.path.exists("ham10000_dataset"):
+    !unzip -q skin-cancer-mnist-ham10000.zip -d ham10000_dataset
+
+print("Dataset downloaded and extracted successfully!")
+
+# ============================================
+# LOAD METADATA
+# ============================================
+
+df = pd.read_csv('ham10000_dataset/HAM10000_metadata.csv')
+
+print("Dataset Shape:", df.shape)
+
+print("\nOriginal Classes:")
+print(df['dx'].value_counts())
+
+# ============================================
+# MAP TO 3 CLASSES
+# ============================================
+
+def map_to_category(dx):
+
+    benign = ['nv', 'bkl', 'df', 'vasc']
+    precancerous = ['akiec']
+    malignant = ['bcc', 'mel']
+
+    if dx in benign:
+        return 'benign'
+
+    elif dx in precancerous:
+        return 'precancerous'
+
+    else:
+        return 'malignant'
+
+df['category'] = df['dx'].apply(map_to_category)
+
+category_to_label = {
+    'benign': 0,
+    'precancerous': 1,
+    'malignant': 2
+}
+
+df['label'] = df['category'].map(category_to_label)
+
+print("\nMapped Classes:")
+print(df['category'].value_counts())
+
+# ============================================
+# IMAGE PATHS
+# ============================================
+
+image_paths = {
+    os.path.splitext(os.path.basename(x))[0]: x
+    for x in glob.glob('ham10000_dataset/**/*.jpg', recursive=True)
+}
+
+df['image_path'] = df['image_id'].map(image_paths)
+
+# Remove missing paths
+df = df[df['image_path'].notnull()]
+
+print("\nValid Images:", len(df))
+
+# ============================================
+# TRAIN / VALIDATION / TEST SPLIT
+# ============================================
+
+train_df, temp_df = train_test_split(
+    df,
+    test_size=0.3,
+    stratify=df['label'],
+    random_state=42
+)
+
+val_df, test_df = train_test_split(
+    temp_df,
+    test_size=0.5,
+    stratify=temp_df['label'],
+    random_state=42
+)
+
+print("\nTraining:", len(train_df))
+print("Validation:", len(val_df))
+print("Testing:", len(test_df))
+
+# ============================================
+# DATA GENERATORS
+# ============================================
+
+IMG_SIZE = 300
+BATCH_SIZE = 16
+
+train_datagen = ImageDataGenerator(
+    preprocessing_function=tf.keras.applications.efficientnet.preprocess_input,
+    rotation_range=30,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True,
+    zoom_range=0.3,
+    brightness_range=[0.8, 1.2],
+    fill_mode='nearest'
+)
+
+val_test_datagen = ImageDataGenerator(
+    preprocessing_function=tf.keras.applications.efficientnet.preprocess_input
+)
+
+train_generator = train_datagen.flow_from_dataframe(
+    dataframe=train_df,
+    x_col='image_path',
+    y_col='label',
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='raw',
+    shuffle=True
+)
+
+val_generator = val_test_datagen.flow_from_dataframe(
+    dataframe=val_df,
+    x_col='image_path',
+    y_col='label',
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='raw',
+    shuffle=False
+)
+
+test_generator = val_test_datagen.flow_from_dataframe(
+    dataframe=test_df,
+    x_col='image_path',
+    y_col='label',
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='raw',
+    shuffle=False
+)
+
+# ============================================
+# BUILD MODEL
+# ============================================
+
+def build_model(num_classes=3):
+    base_model = EfficientNetB3(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(300,300,3)
+    )
+    # base_model = EfficientNetB0(
+    #     weights='imagenet',
+    #     include_top=False,
+    #     input_shape=(IMG_SIZE, IMG_SIZE, 3)
+    # )
+
+    base_model.trainable = False
+
+    inputs = tf.keras.Input(shape=(IMG_SIZE, IMG_SIZE, 3))
+
+    x = base_model(inputs, training=False)
+
+    x = layers.GlobalAveragePooling2D()(x)
+
+    x = layers.Dropout(0.3)(x)
+
+    x = layers.Dense(128, activation='relu')(x)
+
+    x = layers.Dropout(0.2)(x)
+
+    # outputs = layers.Dense(num_classes, activation='softmax')(x)
+    outputs = layers.Dense(
+    num_classes,
+    activation='softmax',
+    dtype='float32'
+)(x)
+
+    model = tf.keras.Model(inputs, outputs)
+
+    return model, base_model
+
+model, base_model = build_model()
+
+model.summary()
+
+# ============================================
+# CLASS WEIGHTS
+# ============================================
+
+class_weights = compute_class_weight(
+    class_weight='balanced',
+    classes=np.array([0, 1, 2]),
+    y=train_df['label'].values
+)
+
+class_weight_dict = {
+    0: class_weights[0],
+    1: class_weights[1],
+    2: class_weights[2]
+}
+
+print("\nClass Weights:")
+print(class_weight_dict)
+
+# ============================================
+# COMPILE MODEL
+# ============================================
+
+# model.compile(
+#     optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+#     loss='sparse_categorical_crossentropy',
+#     metrics=[
+#         'accuracy',
+#         tf.keras.metrics.AUC(name='auc')
+#     ]
+# )
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# ============================================
+# CALLBACKS
+# ============================================
+
+callbacks = [
+
+    EarlyStopping(
+        monitor='val_loss',
+        patience=5,
+        restore_best_weights=True
+    ),
+
+    ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.2,
+        patience=3,
+        min_lr=1e-6
+    ),
+
+    ModelCheckpoint(
+        'best_model.keras',
+        monitor='val_accuracy',
+        save_best_only=True
+    )
+]
+
+# ============================================
+# STAGE 1 TRAINING
+# ============================================
+
+print("\n=== STAGE 1 TRAINING ===")
+
+history1 = model.fit(
+    train_generator,
+    validation_data=val_generator,
+    epochs=6,
+    class_weight=class_weight_dict,
+    callbacks=callbacks,
+    verbose=1
+)
+
+# ============================================
+# FINE TUNING
+# ============================================
+base_model.trainable = True
+
+for layer in base_model.layers[:-50]:
+    layer.trainable = False
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-5),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+# base_model.trainable = True
+
+# for layer in base_model.layers[:-50]:
+#     layer.trainable = False
+
+# # model.compile(
+# #     optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+# #     loss='sparse_categorical_crossentropy',
+# #     metrics=[
+# #         'accuracy',
+# #         tf.keras.metrics.AUC(name='auc')
+# #     ]
+# # )
+# model.compile(
+#     optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+#     loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+#     metrics=[tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")]
+# )
+print("\n=== STAGE 2 FINE TUNING ===")
+
+history2 = model.fit(
+    train_generator,
+    validation_data=val_generator,
+    epochs=4,
+    class_weight=class_weight_dict,
+    callbacks=callbacks,
+    verbose=1
+)
+
+# ============================================
+# EVALUATION
+# ============================================
+
+print("\n=== FINAL EVALUATION ===")
+
+# test_loss, test_acc, test_auc = model.evaluate(test_generator)
+
+# print(f"\nTest Accuracy: {test_acc:.4f}")
+# print(f"Test AUC: {test_auc:.4f}")
+test_loss, test_acc = model.evaluate(test_generator)
+
+print(f"\nTest Accuracy: {test_acc:.4f}")
+# ============================================
+# PREDICTIONS
+# ============================================
+
+predictions = model.predict(test_generator)
+
+y_pred = np.argmax(predictions, axis=1)
+
+y_true = test_df['label'].values
+
+# ============================================
+# CLASSIFICATION REPORT
+# ============================================
+
+print("\nClassification Report:\n")
+
+print(classification_report(
+    y_true,
+    y_pred,
+    target_names=['benign', 'precancerous', 'malignant']
+))
+
+# ============================================
+# CONFUSION MATRIX
+# ============================================
+
+cm = confusion_matrix(y_true, y_pred)
+
+plt.figure(figsize=(8, 6))
+
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt='d',
+    cmap='Blues',
+    xticklabels=['benign', 'precancerous', 'malignant'],
+    yticklabels=['benign', 'precancerous', 'malignant']
+)
+
+plt.title('Confusion Matrix')
+
+plt.xlabel('Predicted')
+
+plt.ylabel('Actual')
+
+plt.show()
+
+# ============================================
+# SAVE MODEL
+# ============================================
+
+model.save("skin_cancer_model.keras")
+
+print("\n✅ Training Complete!")
+print("✅ Model Saved Successfully!")
