@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../utils/constants';
 
 export async function predictImage(file) {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('image', file);
 
   const url = `${API_BASE_URL}/api/v1/predict`;
 
