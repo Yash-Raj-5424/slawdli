@@ -25,8 +25,8 @@ export default function Reports() {
             Your saved analyses will appear here. Run your first scan on the home page and save
             the results.
           </p>
-          <Link to="/" className="mt-8 inline-block">
-            <Button>Go to Home</Button>
+          <Link to="/analyze" className="mt-8 inline-block">
+            <Button>Go to Analyze</Button>
           </Link>
         </Card>
       </div>

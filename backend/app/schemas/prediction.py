@@ -19,12 +19,12 @@ class PredictionResponse(BaseModel):
         schema_extra = {
             "example": {
                 "filename": "skin_image.jpg",
-                "prediction": "healthy_skin",
+                "prediction": "benign",
                 "confidence": 0.85,
                 "all_predictions": {
-                    "healthy_skin": 0.85,
-                    "eczema": 0.10,
-                    "psoriasis": 0.05
+                    "benign": 0.85,
+                    "precancerous": 0.10,
+                    "malignant": 0.05
                 }
             }
         }

@@ -19,7 +19,7 @@ export default function Navbar() {
 
   const visibleLinks = user
     ? NAV_LINKS
-    : NAV_LINKS.filter(({ to }) => to === '/');
+    : NAV_LINKS.filter(({ to }) => to === '/' || to === '/analyze');
 
   return (
     <header className="sticky top-0 z-50 border-b border-clinical-border bg-white/90 backdrop-blur-md">
