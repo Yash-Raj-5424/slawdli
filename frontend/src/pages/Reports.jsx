@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, FileImage, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileImage, Trash2, FileText } from 'lucide-react';
 import ResultCard from '../components/results/ResultCard';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { useReports } from '../hooks/useReports';
 import { formatDate, formatLabel } from '../utils/formatLabel';
+import { generateReportPDF } from '../utils/generateReportPDF';
 
 export default function Reports() {
   const { reports, deleteReport, clearReports } = useReports();
@@ -39,6 +40,17 @@ export default function Reports() {
     }
   };
 
+  const handleDownloadPDF = () => {
+    const pdfBlob = generateReportPDF(reports);
+    const url = window.URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'skin-disease-report.pdf');
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -48,10 +60,16 @@ export default function Reports() {
             {reports.length} saved {reports.length === 1 ? 'scan' : 'scans'} stored in your browser
           </p>
         </div>
-        <Button variant="danger" size="sm" onClick={handleClearAll}>
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
-          Clear all
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="default" size="sm" onClick={handleDownloadPDF} disabled={!reports.length}>
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            Download PDF
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleClearAll}>
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            Clear all
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">
